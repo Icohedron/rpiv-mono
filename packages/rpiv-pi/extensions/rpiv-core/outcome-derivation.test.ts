@@ -344,6 +344,17 @@ describe("equivalence — built-in workflows", () => {
 		"build::reconcile-fix": "reconcile-fix",
 		"vet::reconcile-fix": "reconcile-fix",
 		"ship::reconcile-fix": "reconcile-fix",
+		// meta (meta/unit-graph.ts): every unit producer and
+		// corrector is a PROMPT stage (the compiler owns the whole message — skill
+		// dispatch, lessons, return record), so each carries its bucket explicitly;
+		// the lens panels publish on per-unit verdict channels.
+		"meta::research": "research",
+		"meta::research-grade": "research-verdicts",
+		"meta::acceptance": "acceptance",
+		"meta::plan": "plans",
+		"meta::plan-fix": "plans",
+		"meta::plan-grade": "plan-verdicts",
+		"meta::implement-grade": "implement-verdicts",
 	};
 
 	/**
@@ -393,6 +404,16 @@ describe("equivalence — built-in workflows", () => {
 		"ship::plan-cite-check",
 		"ship::implement-scope-check",
 		"ship::reconcile",
+		// meta: the goal capture plus each unit's deterministic check floor
+		// and its lens-panel fold (the gate).
+		"meta::goal",
+		"meta::research-check",
+		"meta::research-gate",
+		"meta::acceptance-check",
+		"meta::plan-check",
+		"meta::plan-gate",
+		"meta::implement-check",
+		"meta::implement-gate",
 	]);
 
 	// Need architecture-review contract too

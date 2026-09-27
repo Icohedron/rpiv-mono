@@ -99,6 +99,7 @@ import {
 	verdictOutcome,
 	verdictRiskRulings,
 } from "./built-ins/index.js";
+import { metaWorkflow } from "./meta/presets.js";
 
 // The code-review stage's output schema is no longer declared here — every
 // code-review stage sources it from the skill's contract `produces.data`
@@ -1433,4 +1434,10 @@ export { SHIP_DIMENSION_FANOUT, SHIP_DIMENSIONS, shipGatePasses, shipVerdictOutc
 // Position 0 is load-bearing: `build` is the default `/wf` workflow when no
 // project/user config sets one (resolve-default.ts resolves
 // `Map.keys().next().value`), so it MUST stay first in this array.
-export const builtInWorkflows: readonly Workflow[] = [buildWorkflow, vetWorkflow, polishWorkflow, shipWorkflow];
+export const builtInWorkflows: readonly Workflow[] = [
+	buildWorkflow,
+	vetWorkflow,
+	polishWorkflow,
+	shipWorkflow,
+	metaWorkflow,
+];

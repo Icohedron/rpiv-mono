@@ -184,6 +184,10 @@ describe("haltWhenAllFailed wiring (flagged fanout inventory)", () => {
 			"build:slice-design",
 			"build:slice-grade",
 			"build:subplan",
+			"meta:implement",
+			"meta:implement-grade",
+			"meta:plan-grade",
+			"meta:research-grade",
 			"polish:implement",
 			"ship:grade",
 			"ship:implement",
@@ -196,6 +200,9 @@ describe("haltWhenAllFailed wiring (flagged fanout inventory)", () => {
 			"build:plan-grade",
 			"build:slice-design",
 			"build:slice-grade",
+			"meta:implement-grade",
+			"meta:plan-grade",
+			"meta:research-grade",
 			"ship:grade",
 		]);
 		// Belt-and-braces through the narrow helper: the leak-discipline stages
@@ -9131,6 +9138,9 @@ describe("grade panel unit-failed routing (dimension-bearing sentinels)", () => 
 			"build:plan-grade",
 			"build:slice-design",
 			"build:slice-grade",
+			"meta:implement-grade",
+			"meta:plan-grade",
+			"meta:research-grade",
 			"ship:grade",
 		];
 		const optedIn: string[] = [];
