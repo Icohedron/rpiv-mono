@@ -49,8 +49,9 @@ import {
 	type Workflow,
 } from "@juicesharp/rpiv-workflow/registration";
 import { rpivBucketOutcome } from "../artifact-collector.js";
-import { COMMIT_BASELINE_PROMPT, captureGoal, latestFsArtifact } from "../built-ins/index.js";
+import { COMMIT_BASELINE_PROMPT, latestFsArtifact } from "../built-ins/index.js";
 import { lessonsBlock, recordLessons } from "./lessons.js";
+import { captureGoalKeepingWip, wipIntact, wipNotice } from "./wip-guard.js";
 
 // ---------------------------------------------------------------------------
 // Public vocabulary
@@ -64,6 +65,8 @@ export interface Failure {
 	reason: string;
 	/** file:line, command output tail, or other concrete evidence. */
 	evidence?: string;
+	/** Not correctable: the run stops at once (e.g. the user's pre-existing work was lost). */
+	fatal?: boolean;
 }
 
 export interface CheckContext extends ScriptContext {
@@ -216,7 +219,13 @@ const signature = (fs: readonly Failure[]): string =>
 // The return record — what travels back on a correction edge
 // ---------------------------------------------------------------------------
 
-const returnBlock = (unit: string, rec: GateRecord, artifactPath: string | undefined, sideEffect: boolean): string => {
+const returnBlock = (
+	unit: string,
+	rec: GateRecord,
+	artifactPath: string | undefined,
+	sideEffect: boolean,
+	notice = "",
+): string => {
 	const lines = [
 		"",
 		"## Correction — return record",
@@ -229,6 +238,7 @@ const returnBlock = (unit: string, rec: GateRecord, artifactPath: string | undef
 		sideEffect
 			? "SCOPE     fix ONLY the failures above, touching only the files the evidence names (or the minimum needed to make the cited command pass). Do not refactor, do not touch other phases or passing work."
 			: `SCOPE     revise ${artifactPath ?? "your artifact"} IN PLACE, editing only the sections the failures cite. Passing sections stay byte-identical. Do not widen scope.`,
+		...(notice ? [`GUARD     ${notice}`] : []),
 	];
 	return lines.join("\n");
 };
@@ -248,6 +258,9 @@ const escalationBlock = (from: GateRecord): string =>
 
 function decide(state: RunView, unit: string, spec: UnitSpec, rec: Omit<GateRecord, "decision">): GateRecord {
 	if (rec.pass) return { ...rec, decision: "pass" };
+	const fatal = rec.failures.find((f) => f.fatal);
+	if (fatal)
+		return { ...rec, decision: "stop", note: `${unit} FATAL — ${fatal.reason}; ${fatal.evidence ?? ""}`.trim() };
 	const maxRounds = Math.min(spec.maxRounds ?? 3, MAX_ROUNDS_CEILING);
 	const prev = gateRecords(state, unit)
 		.filter((r) => r.generation === rec.generation && !r.pass && r.round === rec.round - 1)
@@ -292,7 +305,10 @@ function producerPrompt(unit: string, spec: UnitSpec, isFirst: boolean): PromptF
 		if (esc && round === 1) text += escalationBlock(esc);
 		const red = latestRed(state, unit);
 		const artifact = spec.output ? latestFsArtifact(state, spec.output) : undefined;
-		if (red) text += returnBlock(unit, red, artifact ? handleToString(artifact.handle) : undefined, !spec.output);
+		if (red) {
+			const notice = spec.output ? "" : wipNotice(state, cwd);
+			text += returnBlock(unit, red, artifact ? handleToString(artifact.handle) : undefined, !spec.output, notice);
+		}
 		return text;
 	};
 }
@@ -306,8 +322,9 @@ function fixPrompt(unit: string, spec: UnitSpec): PromptFn {
 			? dispatchText(spec.fix, { state, cwd, flags, round })
 			: `Correct the work of unit \`${unit}\`. Inputs: ${flags}`;
 		const artifact = spec.output ? latestFsArtifact(state, spec.output) : undefined;
+		const notice = spec.output ? "" : wipNotice(state, cwd);
 		return red
-			? base + returnBlock(unit, red, artifact ? handleToString(artifact.handle) : undefined, !spec.output)
+			? base + returnBlock(unit, red, artifact ? handleToString(artifact.handle) : undefined, !spec.output, notice)
 			: base;
 	};
 }
@@ -323,7 +340,8 @@ function checkStage(unit: string, spec: UnitSpec): StageDef {
 			const artifact = spec.output ? latestFsArtifact(ctx.state, spec.output) : undefined;
 			const artifactPath = artifact?.handle.kind === "fs" ? artifact.handle.path : undefined;
 			const failures: Failure[] = [];
-			for (const c of spec.checks ?? []) {
+			const checks = spec.output ? (spec.checks ?? []) : [wipIntact, ...(spec.checks ?? [])];
+			for (const c of checks) {
 				try {
 					failures.push(...(await c.run({ ...ctx, unit, round, artifactPath })));
 				} catch (err) {
@@ -353,13 +371,14 @@ function graderUnits(unit: string, spec: UnitSpec) {
 		max: Math.max(1, spec.graders?.length ?? 1),
 		haltWhenAllFailed: true,
 		retryHaltedUnits: 1,
-		units: ({ state }) => {
+		units: ({ state, cwd }) => {
 			const round = currentRound(state, unit);
 			const generation = generationOf(state, unit);
 			const artifact = spec.output ? latestFsArtifact(state, spec.output) : undefined;
 			const target = artifact
 				? handleToString(artifact.handle)
-				: "the working tree (git diff against the run baseline)";
+				: "the working tree — ONLY the changes this run made (git diff HEAD + untracked, minus the pre-existing paths named in the rubric)";
+			const guard = artifact ? "" : ` ${wipNotice(state, cwd)}`;
 			return (spec.graders ?? []).map((g) => ({
 				id: `${unit}-${g.lens}`,
 				label: `${unit} · ${g.lens}`,
@@ -368,7 +387,7 @@ function graderUnits(unit: string, spec: UnitSpec) {
 					`--target ${target}`,
 					flagsFor(state, g.context),
 					`--out ${VERDICT_DIR}`,
-					`--rubric ${JSON.stringify(g.rubric)}`,
+					`--rubric ${JSON.stringify(g.rubric + guard)}`,
 				]
 					.filter(Boolean)
 					.join(" "),
@@ -484,7 +503,7 @@ export function defineUnitGraph(g: UnitGraphSpec): Workflow {
 		}
 	}
 
-	const stages: Record<string, StageDef> = { goal: produces.script({ run: captureGoal }) };
+	const stages: Record<string, StageDef> = { goal: produces.script({ run: captureGoalKeepingWip }) };
 	const edges: Record<string, string | EdgeFn> = { goal: names[0]! };
 	const commit = g.commit ?? true;
 

@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type Output, type RunView, validateWorkflow } from "@juicesharp/rpiv-workflow";
@@ -7,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { lessonsBlock, recordLessons } from "./lessons.js";
 import { metaWorkflow } from "./presets.js";
 import { type Check, defineUnitGraph } from "./unit-graph.js";
+import { captureGoalKeepingWip, wipIntact, wipNotice } from "./wip-guard.js";
 
 const out = (data: unknown, artifacts: Output["artifacts"] = []): Output =>
 	({ kind: "json", data, artifacts, meta: { stage: "x", stageNumber: 1, ts: "t", runId: "r" } }) as Output;
@@ -178,5 +180,75 @@ describe("the learning edge", () => {
 		expect(block).toMatch(/Standing constraints/);
 		expect(block).toMatch(/seen 2×\] API drift/);
 		expect(lessonsBlock(cwd, "research")).toBe("");
+	});
+});
+
+describe("the WIP guard (run 2026-09-27_11-36-01-edef: a fix step reverted the user's uncommitted work)", () => {
+	const sh = (...args: string[]) => execFileSync("git", args, { cwd, stdio: "ignore" });
+	beforeEach(() => {
+		sh("init", "-q");
+		sh("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "base");
+		writeFileSync(join(cwd, "a.txt"), "base\n");
+		sh("add", "a.txt");
+		sh("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "a");
+		writeFileSync(join(cwd, "a.txt"), "user wip\n"); // pre-existing tracked edit
+		writeFileSync(join(cwd, "new.txt"), "untracked wip\n"); // pre-existing untracked file
+	});
+
+	const start = () => {
+		const goal = captureGoalKeepingWip({ cwd, input: undefined, state: view({}, "fix the thing in the app please") });
+		return view({ goal: [out({}, goal.artifacts)] });
+	};
+
+	it("backs the pre-existing work up at run start (patch + untracked copies)", () => {
+		const state = start();
+		const wip = state.named.goal?.[0]?.artifacts.find((a) => a.role === "wip");
+		expect(wip).toBeDefined();
+		const notice = wipNotice(state, cwd);
+		expect(notice).toMatch(/NEVER run git checkout/);
+		expect(notice).toMatch(/a\.txt/);
+		expect(notice).toMatch(/new\.txt/);
+	});
+
+	it("a reverted pre-existing edit is a FATAL failure that stops the run with no correction round", async () => {
+		const state = start();
+		expect(await wipIntact.run({ cwd, input: undefined, state, unit: "implement", round: 1 })).toEqual([]);
+		sh("checkout", "--", "a.txt"); // what the fix step did
+		const failures = await wipIntact.run({ cwd, input: undefined, state, unit: "implement", round: 1 });
+		expect(failures).toHaveLength(1);
+		expect(failures[0]).toMatchObject({ fatal: true });
+		expect(failures[0]?.evidence).toMatch(/git apply \.rpiv\/artifacts\/goal\/wip-.*\.patch/);
+
+		const wf = defineUnitGraph({
+			name: "w",
+			commit: false,
+			units: [
+				["research", { prompt: "r", output: "research" }],
+				["implement", { prompt: "i", maxRounds: 3 }],
+			],
+		});
+		const rec = (
+			await (wf.stages["implement-check"] as { run: ProducesScriptFn }).run({ cwd, input: undefined, state })
+		).data as { decision: string; note: string };
+		expect(rec.decision).toBe("stop");
+		expect(rec.note).toMatch(/FATAL/);
+	});
+
+	it("side-effect graders and correctors are told to judge only this run's changes", async () => {
+		const state = start();
+		const wf = defineUnitGraph({
+			name: "w",
+			commit: false,
+			units: [
+				["research", { prompt: "r", output: "research" }],
+				["implement", { prompt: "i", graders: [{ lens: "goal", rubric: "FAIL if off-goal." }] }],
+			],
+		});
+		const loop = wf.stages["implement-grade"]?.loop as unknown as {
+			units: (c: unknown) => Array<{ prompt: string }>;
+		};
+		const [unit] = loop.units({ cwd, state, artifact: undefined });
+		expect(unit?.prompt).toMatch(/ONLY the changes this run made/);
+		expect(unit?.prompt).toMatch(/never judge, flag, or revert them: a\.txt/);
 	});
 });
