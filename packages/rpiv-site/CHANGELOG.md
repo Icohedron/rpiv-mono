@@ -9,6 +9,7 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- "One day of the loop" blog post: a case study of a single `/wf build` run on a reverse-engineered earbuds app — one sentence in at 09:22, a third device family committed at 20:24 (113 files, 16,042 insertions, all on GLM-5.3), what the gates did at every stage, and why the pipeline rather than the model carried the quality.
 - "v2.11: the judge was the wall clock" blog post: release notes for v2.11.0, covering the risk-rulings panel unit, the batched commit-first correctness judge with its replay, and the acceptance disposition contract for build's planner.
 
 ## [2.11.0] - 2026-09-21
