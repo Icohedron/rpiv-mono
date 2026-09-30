@@ -12,7 +12,7 @@ Claude-Code-parity task management for Pi. Registers a single multiplexed `todo`
 - **`@earendil-works/pi-tui`** (peer): width-safe text helpers, render primitives
 - **`@juicesharp/rpiv-i18n`** (peer, `"*"`, optional): locale lookups via `state/i18n-bridge.ts`
 - **`@juicesharp/rpiv-config`** (dependency): `loadJsonConfigWithLegacyFallback`/`validateGuidanceFields` — XDG-path load with one-way legacy fallback; `config.ts` owns `TodoConfig` (prompt overrides + overlay settings `maxWidgetLines`/`collapseKey`, `config.ts:4-15`) and the collapse-key grammar validator
-- **`typebox`** (dependency — moved from peers so installers that don't materialise peer deps still resolve it): tool parameter schema
+- **`typebox`** (`peerDependencies: "*"`, host-provided): tool parameter schema. Pi supplies and aliases it at load time; never a `dependencies` entry (v2.12.0, #282)
 
 ## Consumers
 - **Pi extension host** (loads via `pi.extensions: ["./index.ts"]`) and **`rpiv-pi`** (lists in `peerDependencies` and `siblings.ts`)
