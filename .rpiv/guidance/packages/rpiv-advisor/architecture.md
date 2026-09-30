@@ -11,7 +11,7 @@ Single-tool extension implementing the advisor-strategy pattern: registers an `a
 - **`@earendil-works/pi-ai`** (peer): `Model`/`Api`/`ThinkingLevel` types plus a static value import of `getSupportedThinkingLevels` (`advisor/command.ts` effort picker); only `completeSimple` is resolved at runtime by `advisor/pi-compat.ts`
 - **`@earendil-works/pi-tui`** (peer): containers, select list, layout primitives
 - **`@juicesharp/rpiv-config`** (dependency): `validateGuidanceFields` (persisted prompt overrides), `modelKey`/`parseModelKey` (config codec + blocklist canonicalization)
-- **`typebox`** (dependency, `^1.1.24`): empty parameter schema — a runtime dep, not a peer, so tools still register under installers that don't materialize peers
+- **`typebox`** (`peerDependencies: "*"`, host-provided): empty parameter schema. Pi supplies and aliases `typebox` at load time, so it is never a `dependencies` entry — an installed copy would be a second live instance (v2.12.0, #282)
 
 ## Consumers
 - **Pi extension host** loads via `pi.extensions: ["./index.ts"]`; **`rpiv-pi`** lists it in `peerDependencies` and `siblings.ts`

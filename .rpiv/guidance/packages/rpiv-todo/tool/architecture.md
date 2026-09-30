@@ -4,7 +4,7 @@
 The LLM-facing tool contract surface: declares tool identity strings, the TypeBox parameter schema (whose `description` fields double as prompt copy), and builds the dual-channel response envelope — human-readable `content` text plus the machine-readable `details` snapshot consumed by post-compaction replay.
 
 ## Dependencies
-- **`typebox`** (regular dependency, not peer): `Type`, `Static` for `TodoParamsSchema` — moved from peers so tool registration survives installers that do not materialise peer deps
+- **`typebox`** (`peerDependencies: "*"`, host-provided): `Type`, `Static` for `TodoParamsSchema`. Pi supplies and aliases `typebox` at load time, so a `dependencies` entry is never needed and triggers the host's duplicate-module warning (v2.12.0, #282)
 - **`@earendil-works/pi-ai`** (peer): `StringEnum` for `action` and `status` literal unions
 - **Internal**: `../state/state.js` (`TaskState`), `../state/state-reducer.js` (`Op`), `../state/task-graph.js` (`deriveBlocks`)
 

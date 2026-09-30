@@ -11,7 +11,7 @@ Chain Pi skills into typed multi-stage workflows. Owns the `/wf` slash command (
 
 ## Dependencies
 - **`@earendil-works/pi-coding-agent`** (peer): structural host types only, no value imports. **`@standard-schema/spec`** (peer): standard-schema interop for the validation surface
-- **`typebox`** (dependency): `outputSchema` validation for `produces()` stages — declared directly (not a peer), so installs that don't materialize peers still validate outputs (`typebox-adapter.ts`). **`jiti`** (dependency): loads user `.ts` overlays without a build step. **`@juicesharp/rpiv-config`** (dependency): `configPath` for the user layer
+- **`typebox`** (`peerDependencies: "*"`, host-provided): `outputSchema` validation for `produces()` stages (`typebox-adapter.ts`). Pi supplies and aliases `typebox` at load time, so it is never a `dependencies` entry (v2.12.0, #282). **`jiti`** (dependency): loads user `.ts` overlays without a build step. **`@juicesharp/rpiv-config`** (dependency): `configPath` for the user layer
 
 ## Consumers
 - **`@juicesharp/rpiv-pi`** — registers a lazy provider via `registerBuiltInsProvider` from the `/startup` entry (`registerBuiltIns(builtInWorkflows)` = build/vet/polish/ship, built on first `/wf`, not startup); auto-wires bucket-narrowed `rpivBucketOutcome(bucket)` onto contract-backed `produces()` stages at load time via `registerOutcomeDeriver` (`skill-contracts/extension-points.ts`, re-exported through `/registration` + `/startup`); stages with explicit outcomes (e.g. the verdict outcomes in rpiv-pi's `built-in-workflows.ts`) keep theirs

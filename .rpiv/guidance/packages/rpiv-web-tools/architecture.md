@@ -9,7 +9,7 @@ Pi extension exposing two tools (`web_search`, `web_fetch`) and one `/web-tools`
 ## Dependencies
 - **`@earendil-works/pi-coding-agent`** (peer): `ExtensionAPI`, truncation helpers, default size limits
 - **`@earendil-works/pi-tui`** (peer): rendering primitives
-- **`typebox`**: tool parameter + config schemas — regular dependency, not a peer (moved so installers that skip peer materialization still resolve it)
+- **`typebox`** (`peerDependencies: "*"`, host-provided): tool parameter + config schemas. Pi supplies and aliases `typebox` at load time, so it is never a `dependencies` entry (v2.12.0, #282)
 - **`@juicesharp/rpiv-config`**: `configPath`, `loadJsonConfigWithLegacyFallback`, `saveJsonConfig`, `validateGuidanceFields`, `GuidanceFieldsSchema`
 - **Ten configurable search providers** (hosted REST vendors + self-hosted SearXNG/Ollama): credentialed; key resolved env-first, config-second
 - Node built-ins for config persistence + temp-file spill
