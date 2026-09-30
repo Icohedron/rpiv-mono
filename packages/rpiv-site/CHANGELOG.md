@@ -7,6 +7,10 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- "v2.12: a challenger for build" blog post: release notes for v2.12.0, covering the meta unit-graph workflow and its A/B harness, the lens-grade skill, the typebox host-provided peer fix, the meta WIP guard, and the grade skill's comment-only rule.
+
 ## [2.12.0] - 2026-09-30
 
 ### Added
