@@ -9,6 +9,7 @@ Fifteen packages in one npm workspace: the **rpiv-pi** pipeline, the [Pi Agent](
 **Where to start:**
 
 - **You want to use it** — `pi install npm:@juicesharp/rpiv-pi`, restart Pi, run `/rpiv-setup`. Full narrative, subagent map, and install walkthrough: [rpiv-pi.com](https://rpiv-pi.com).
+- **You want the small git bundle** — `pi install git:github.com/Icohedron/rpiv-mono` loads only `rpiv-ask-user-question`, `rpiv-todo`, and `rpiv-btw`. Restart Pi; the tools `ask_user_question` and `todo` and the `/btw` command are ready. The included `rpiv-config` library supports the first two (it is not a Pi extension). This does not install the `rpiv-pi` pipeline or the other workspace extensions.
 - **You want one piece of it** — every extension below stands alone. Pick a row from [Packages](#packages).
 - **You want to read or hack the code** — [Repo as a repo](#repo-as-a-repo) has the layout, the conventions, and what the git hooks enforce.
 - **You want to know where this is going** — [roadmap.md](./roadmap.md) for the structured view, [Roadmap](#roadmap) for the reasoning behind it.
@@ -73,7 +74,7 @@ Find me on X: [@juicesharp](https://x.com/juicesharp).
 
 ## Repo as a repo
 
-npm workspaces monorepo. Clone, `npm install` at the root, that's it. Node 22+ and npm 11+ (the `engines` floor).
+npm workspaces monorepo. Clone, run `npm install --workspaces --include-workspace-root` at the root. Node 22+ and npm 11+ (the `engines` floor). `.npmrc` keeps workspaces opt-in so Pi's git install does not install every workspace or the site's and voice extension's dependencies. Use `npm ci --workspaces --include-workspace-root` for a clean development install.
 
 A few choices worth naming up front:
 
