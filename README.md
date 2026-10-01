@@ -6,11 +6,13 @@
 
 Fifteen packages in one npm workspace: the **rpiv-pi** pipeline, the [Pi Agent](https://github.com/badlogic/pi-mono) extensions it composes, and the internal packages holding them up. Twelve publish to npm; three never leave the repo. Kept together so orchestration and tool surfaces evolve and ship in lockstep.
 
+**This fork supports git installation only:** `pi install git:github.com/Icohedron/rpiv-mono`. The npm installation instructions below describe upstream packages, not this fork. The git bundle uses its checked-out shared config source and does not install packages from `@juicesharp`.
+
 **Where to start:**
 
-- **You want to use it** — `pi install npm:@juicesharp/rpiv-pi`, restart Pi, run `/rpiv-setup`. Full narrative, subagent map, and install walkthrough: [rpiv-pi.com](https://rpiv-pi.com).
+- **You want the upstream pipeline** — `pi install npm:@juicesharp/rpiv-pi`, restart Pi, run `/rpiv-setup`. Full narrative, subagent map, and install walkthrough: [rpiv-pi.com](https://rpiv-pi.com).
 - **You want the small git bundle** — `pi install git:github.com/Icohedron/rpiv-mono` loads only `rpiv-ask-user-question`, `rpiv-todo`, and `rpiv-btw`. Restart Pi; the tools `ask_user_question` and `todo` and the `/btw` command are ready. The included `rpiv-config` library supports the first two (it is not a Pi extension). This does not install the `rpiv-pi` pipeline or the other workspace extensions.
-- **You want one piece of it** — every extension below stands alone. Pick a row from [Packages](#packages).
+- **You want one upstream npm package** — the published extensions below install individually, but are not part of this fork's git bundle. Pick a row from [Packages](#packages).
 - **You want to read or hack the code** — [Repo as a repo](#repo-as-a-repo) has the layout, the conventions, and what the git hooks enforce.
 - **You want to know where this is going** — [roadmap.md](./roadmap.md) for the structured view, [Roadmap](#roadmap) for the reasoning behind it.
 
