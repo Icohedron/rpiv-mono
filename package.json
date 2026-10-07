@@ -6,7 +6,6 @@
 	"pi": {
 		"extensions": [
 			"./packages/rpiv-ask-user-question/index.ts",
-			"./packages/rpiv-todo/index.ts",
 			"./packages/rpiv-btw/index.ts"
 		]
 	},
